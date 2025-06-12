@@ -2,42 +2,42 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
   isLoggedIn: boolean;
-  login: (num: number) => void;
+  login: (sId: string) => void;
   logout: () => void;
-  studentNum?: number;
+  sId?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [studentNum, setStudentNum] = useState<number | undefined>(undefined);
+  const [sId, setSId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const storedLogin = localStorage.getItem('isLoggedIn') === 'true';
-    const storedNum = localStorage.getItem('studentNum');
+    const storedSId = localStorage.getItem('sId');
     setIsLoggedIn(storedLogin);
-    if (storedNum) {
-      setStudentNum(Number(storedNum));
+    if (storedSId) {
+      setSId(storedSId);
     }
   }, []);
 
-  const login = (num: number) => {
+  const login = (sId: string) => {
     localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('studentNum', num.toString());
+    localStorage.setItem('sId', sId);
     setIsLoggedIn(true);
-    setStudentNum(num);
+    setSId(sId);
   };
 
   const logout = () => {
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('studentNum');
+    localStorage.removeItem('sId');
     setIsLoggedIn(false);
-    setStudentNum(undefined);
+    setSId(undefined);
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout, studentNum }}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, sId }}>
       {children}
     </AuthContext.Provider>
   );

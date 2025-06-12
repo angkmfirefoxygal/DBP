@@ -1,6 +1,7 @@
 // src/pages/SigninPage.tsx
 import React, { useState } from 'react';
 import CenterLayout from '../components/CenterLayout';
+import { login as loginApi } from '../api/login.ts';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,11 +14,15 @@ const SigninPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    login(2211326); //현재 하드코딩, 나중에 서버에서 가져올 것임
-    alert('로그인 성공');
+  const handleLogin = async () => {
+  const data = await loginApi(id, password);
+  if (data.status === 'success') {
+    login(id);
     navigate('/');
-  };
+  } else {
+    alert(data.message);
+  }
+};
 
   return (
     <CenterLayout>

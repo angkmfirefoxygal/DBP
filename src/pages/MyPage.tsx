@@ -6,13 +6,11 @@ import { useNavigate } from 'react-router-dom';
 const dummyUserInfo = {
   loginId: 'user555',
   name: 'user555',
-  account: '12334454',
-  bank: '국민',
   email: 'user555@example.com',
 };
 
 const MyPage = () => {
-  const { studentNum, logout } = useAuth();
+  const { sId, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -27,7 +25,7 @@ const MyPage = () => {
         <h2 style={styles.title}>내 정보</h2>
 
         <div style={styles.infoBox}>
-          <strong>학번:</strong> {studentNum ?? '로그인 정보 없음'}
+          <strong>학번:</strong> {sId ?? '로그인 정보 없음'}
         </div>
         <div style={styles.infoBox}>
           <strong>아이디:</strong> {dummyUserInfo.loginId}
@@ -38,12 +36,7 @@ const MyPage = () => {
         <div style={styles.infoBox}>
           <strong>이메일:</strong> {dummyUserInfo.email}
         </div>
-        <div style={styles.infoBox}>
-          <strong>은행명:</strong> {dummyUserInfo.bank}
-        </div>
-        <div style={styles.infoBox}>
-          <strong>계좌번호:</strong> {dummyUserInfo.account}
-        </div>
+        
 
         <button style={styles.button} onClick={handleLogout}>
           로그아웃
