@@ -1,17 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CenterLayout from '../components/CenterLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { fetchStudentInfo } from '../api/mypage';
+import pigGif from '../assets/piggy.gif'
 
-const dummyUserInfo = {
-  loginId: 'user555',
-  name: 'user555',
-  email: 'user555@example.com',
-};
 
 const MyPage = () => {
   const { sId, logout } = useAuth();
+  const [student, setStudent] = useState<{name: String, sid: String, snum : number} | null>(null);
   const navigate = useNavigate();
+
+   useEffect(() => {
+    if (!sId) return;
+    fetchStudentInfo(sId)
+      .then(setStudent)
+      .catch(() => {
+        alert('사용자 정보를 불러오는 데 실패했습니다.');
+      });
+  }, [sId]);
+
+  console.log('불러온 사용자 정보:', student);
 
   const handleLogout = () => {
     logout();
@@ -19,24 +28,21 @@ const MyPage = () => {
     navigate('/');
   };
 
+  if (!student) {
+    return <CenterLayout>로딩 중...</CenterLayout>;
+  }
+
+
   return (
     <CenterLayout>
       <div style={styles.container}>
         <h2 style={styles.title}>내 정보</h2>
+        <img src={pigGif} alt="귀여운 돼지" style={styles.gif} />
 
-        <div style={styles.infoBox}>
-          <strong>학번:</strong> {sId ?? '로그인 정보 없음'}
-        </div>
-        <div style={styles.infoBox}>
-          <strong>아이디:</strong> {dummyUserInfo.loginId}
-        </div>
-        <div style={styles.infoBox}>
-          <strong>이름:</strong> {dummyUserInfo.name}
-        </div>
-        <div style={styles.infoBox}>
-          <strong>이메일:</strong> {dummyUserInfo.email}
-        </div>
-        
+        <div style={styles.infoBox}><strong>학번:</strong> {student.snum}</div>
+        <div style={styles.infoBox}><strong>아이디:</strong> {student.sid}</div>
+        <div style={styles.infoBox}><strong>이름:</strong> {student.name}</div>
+
 
         <button style={styles.button} onClick={handleLogout}>
           로그아웃
@@ -56,11 +62,11 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '0 auto',
   },
   title: {
-    marginBottom: '16px',
+    marginBottom: '40px',
     fontSize: '24px',
   },
   infoBox: {
-    width: '100%',
+    width: '80%',
     padding: '10px 14px',
     marginBottom: '10px',
     backgroundColor: '#f5f5f5',
@@ -71,8 +77,8 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left',
   },
   button: {
-    width: '100%',
-    padding: '12px',
+    width: '90%',
+    padding: '10px',
     fontSize: '16px',
     backgroundColor: '#ccc',
     color: '#000',
@@ -80,6 +86,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     cursor: 'pointer',
     marginTop: '20px',
+  },
+  gif: {
+    width: '140px',
+    height: '140px',
+    display: 'block',
+    margin: '0 auto 24px auto',
+    marginBottom: '50px',
   },
 };
 

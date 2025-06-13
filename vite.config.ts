@@ -6,7 +6,15 @@ export default defineConfig({
   plugins: [react()],
   server : {
      proxy: {
-      '/auth': 'http://localhost:8080',
+      '/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin:true,
+      },
+
+       '/spend': {
+        target: 'http://localhost:8080', // 스프링 서버 주소
+        changeOrigin: true,
+      },
     },
   },
 })

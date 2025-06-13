@@ -10,5 +10,5 @@ export const login = async (sId: string, password: string) => {
       },
     }
   );
-  return response.data as { status: string; message: string };
+  return response.data as { status: string; message: string, snum: number };
 };

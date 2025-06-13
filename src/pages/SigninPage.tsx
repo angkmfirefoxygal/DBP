@@ -17,7 +17,7 @@ const SigninPage = () => {
   const handleLogin = async () => {
   const data = await loginApi(id, password);
   if (data.status === 'success') {
-    login(id);
+    login(id, data.snum);
     navigate('/');
   } else {
     alert(data.message);
