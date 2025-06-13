@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchSpendings,
   createSpending,
@@ -9,6 +10,10 @@ import {
 import type { Spending } from '../api/spend';
 import { useAuth } from '../contexts/AuthContext';
 import CenterLayout from '../components/CenterLayout';
+import { fetchMaxCategory, fetchExceedCategories } from '../api/analysis';
+import type { MaxCategory, ExceedCategory } from '../api/analysis';
+
+
 
 
 const styles = {
@@ -58,10 +63,20 @@ const styles = {
     border: 'none',
   },
   btnAdd: {
-    backgroundColor: '#ccc', // 핑크
+    backgroundColor: '#ccc', 
     marginLeft: '0px',
     marginTop: '15px',
-    padding: '4px 8px',
+    padding: '5px 12px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    borderRadius: '30px',
+    border: 'none',
+  },
+  btnAnlsys: {
+    backgroundColor: '#ccc', 
+    marginLeft: '-5px',
+    marginTop: '5px',
+    padding: '5px 12px',
     fontSize: '12px',
     cursor: 'pointer',
     borderRadius: '15px',
@@ -108,6 +123,14 @@ const CategoryPage: React.FC = () => {
     loadSpendings();
   }, [sNum]);
 
+
+  // 필터 핸들러
+  const [selectedCategory, setSelectedCategory] = useState<string>('전체');
+  const uniqueCategories = ['전체', ...Array.from(new Set(spendings.map(item => item.categoryName)))];
+  const filteredSpendings = selectedCategory === '전체'
+    ? spendings
+    : spendings.filter(item => item.categoryName === selectedCategory);
+
   
 
   // 🟢 추가 핸들러
@@ -138,34 +161,171 @@ const CategoryPage: React.FC = () => {
     await loadSpendings();
   };
 
+  const navigate = useNavigate();
+
+  const [isAnalysisMode, setIsAnalysisMode] = useState(false);
+  const [maxCategory, setMaxCategory] = useState<MaxCategory | null>(null);
+  const [exceedCategories, setExceedCategories] = useState<ExceedCategory[]>([]);
+
+  useEffect(() => {
+    if (isAnalysisMode && sNum) {
+      fetchMaxCategory(sNum).then(setMaxCategory);
+      fetchExceedCategories(sNum).then(setExceedCategories);
+    }
+  }, [isAnalysisMode, sNum]);
+
+    
+
+
   return (
-    <CenterLayout>
-      <div>
-        <h2 style={styles.title}>카테고리별 소비 내역</h2>
-        
-        {error && <p style={styles.error}>{error}</p>}
+  <CenterLayout>
+    {/* 뒤로가기 버튼 */}
+    <div style={{ textAlign: 'left' }}>
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          fontSize: '30px',
+          cursor: 'pointer',
+          marginLeft: '-10px',
+        }}
+        aria-label="뒤로가기"
+      >
+        ⬅️
+      </button>
+    </div>
 
-        {spendings.length === 0 ? (
-          <p style={styles.subtitle}>아직 소비 내역이 없습니다.</p>
-        ) : (
-          <ul style={styles.list}>
-            {spendings.map((item) => (
-              <li key={item.id} style={styles.listItem}>
-                <span style={styles.category}>{item.categoryName}</span>
-                <span style={styles.amount}>{item.amount.toLocaleString()}원</span>
-                <span style={styles.date}>{item.spendDate}</span>
-                <button style={styles.btnEdit} onClick={() => handleEdit(item)}>수정</button>
-                <button style={{ ...styles.btnDelete}} onClick={() => handleDelete(item.id)}>삭제</button>
-              </li>
+    <div style={styles.container}>
+      <h2 style={styles.title}>소비 내역 조회</h2>
 
-              
-            ))}
-            <button style={styles.btnAdd} onClick={handleAdd}>소비 내역 추가</button>
-          </ul>
-        )}
+      {error && <p style={styles.error}>{error}</p>}
+
+      
+      
+
+      
+
+      <button
+        style={styles.btnAnlsys}
+        onClick={() => setIsAnalysisMode(!isAnalysisMode)}
+      >
+        {isAnalysisMode ? '← 소비 내역으로' : '소비 내역 분석'}
+      </button>
+
+      {/* 🔁 이 부분만 토글 */}
+      {isAnalysisMode ? (
+        <div>
+          <p style={styles.subtitle}>최대 지출 카테고리:</p>
+          {maxCategory ? (
+            <p>
+              {maxCategory.categoryName} -{' '}
+              {maxCategory.totalAmount.toLocaleString()}원
+            </p>
+          ) : (
+            <p>데이터가 없습니다.</p>
+          )}
+
+          <p style={{ ...styles.subtitle, marginTop: '12px' }}>
+            예산 초과 카테고리:
+          </p>
+          {exceedCategories.length > 0 ? (
+            <ul style={styles.list}>
+              {exceedCategories.map((item, idx) => (
+                <li key={idx} style={styles.listItem}>
+                  <span style={styles.category}>{item.categoryName}</span>
+                  <span style={styles.amount}>
+                    {item.used.toLocaleString()}원 사용 / 한도{' '}
+                    {item.limit.toLocaleString()}원
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>예산을 초과한 카테고리가 없습니다.</p>
+          )}
+        </div>
+      ) : filteredSpendings.length === 0 ? (
+        <p style={styles.subtitle}>해당 카테고리의 소비 내역이 없습니다.</p>
+      ) : (
+        <ul
+          style={{
+            maxHeight: '300px',
+            
+            ...styles.list,
+          }}
+        > 
+
+          <div style={{ marginBottom: '16px' }}>
+        <label htmlFor="categoryFilter">카테고리 선택: </label>
+        <select
+          id="categoryFilter"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          style={{
+            padding: '5px 25px 5px 10px',
+            marginLeft: '5px',
+            borderRadius: '20px',
+            border: '1px solid #ccc',
+            fontSize: '13px',
+            backgroundColor: '#f9f9f9',
+            backgroundImage:
+              'url("data:image/svg+xml;utf8,<svg fill=\'%23777\' height=\'14\' viewBox=\'0 0 24 24\' width=\'14\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>")',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 10px center',
+            backgroundSize: '14px',
+            cursor: 'pointer',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            MozAppearance: 'none',
+          }}
+        >
+          {uniqueCategories.map((cat, idx) => (
+            <option key={idx} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
       </div>
-    </CenterLayout>
-  );
+          
+          {filteredSpendings.map((item) => (
+            <li key={item.id} style={styles.listItem}>
+              <span style={styles.category}>{item.categoryName}</span>
+              <span style={styles.amount}>
+                {item.amount.toLocaleString()}원
+              </span>
+              <span style={styles.date}>{item.spendDate}</span>
+              <button
+                style={styles.btnEdit}
+                onClick={() => handleEdit(item)}
+              >
+                수정
+              </button>
+              <button
+                style={styles.btnDelete}
+                onClick={() => handleDelete(item.id)}
+              >
+                삭제
+              </button>
+            </li>
+          ))}
+
+          {/* 버튼 */}
+          <button style={styles.btnAdd} onClick={handleAdd}>
+            +
+          </button>
+           
+        </ul>
+        
+        
+      )}
+    </div>
+  </CenterLayout>
+);
+
+
+
+
 };
 
 export default CategoryPage;

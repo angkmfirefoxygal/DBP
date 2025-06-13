@@ -30,7 +30,7 @@ const MainPage = () => {
               <img src={pigGif} alt="귀여운 돼지" style={styles.gif} />
               <div style={styles.buttonGroup}>
                 <button onClick={() => navigate('/category')} style={styles.button}>
-                  소비 분석
+                  소비 내역 조회 
                 </button>
                 <button onClick={() => navigate('/discount')} style={styles.button}>
                   할인 정보

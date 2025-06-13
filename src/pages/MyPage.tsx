@@ -35,7 +35,24 @@ const MyPage = () => {
 
   return (
     <CenterLayout>
+      <div style={{textAlign: 'left'}}>
+          <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: 'transparent',   // 배경 투명
+            border: 'none',              // 테두리 없음
+            fontSize: '30px',            // 화살표 크기 조절
+            cursor: 'pointer',
+            marginLeft: '25px',
+            }}
+          aria-label="뒤로가기"
+          >
+          ⬅️
+        </button>
+        </div>
       <div style={styles.container}>
+        
+        
         <h2 style={styles.title}>내 정보</h2>
         <img src={pigGif} alt="귀여운 돼지" style={styles.gif} />
 
