@@ -8,9 +8,10 @@ export interface MaxCategory {
 
 export interface ExceedCategory {
   categoryName: string;
-  used: number;
-  limit: number;
+  limitAmount: number;
+  totalSpent: number;
 }
+
 
 export const fetchMaxCategory = async (sNum: number): Promise<MaxCategory | null> => {
   try {
@@ -24,7 +25,7 @@ export const fetchMaxCategory = async (sNum: number): Promise<MaxCategory | null
 
 export const fetchExceedCategories = async (sNum: number): Promise<ExceedCategory[]> => {
   try {
-    const response = await axios.get<ExceedCategory[]>('/category/exceed', {
+    const response = await axios.get<ExceedCategory[]>('/category/exceed2', {
       params: { sNum }, // ✅ 쿼리 파라미터 방식
     });
     return response.data;

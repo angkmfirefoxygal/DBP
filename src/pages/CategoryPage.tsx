@@ -188,7 +188,13 @@ const CategoryPage: React.FC = () => {
   useEffect(() => {
     if (isAnalysisMode && sNum) {
       fetchMaxCategory(sNum).then(setMaxCategory);
-      fetchExceedCategories(sNum).then(setExceedCategories);
+      // fetchExceedCategories(sNum).then(setExceedCategories);
+       fetchExceedCategories(sNum)
+      .then((res) => {
+        console.log('✅ 예산 초과 카테고리 응답:', res);
+        setExceedCategories(res);
+      })
+      .catch((err) => console.error('❌ 예산 초과 오류:', err));
     }
   }, [isAnalysisMode, sNum]);
 
@@ -232,7 +238,7 @@ const CategoryPage: React.FC = () => {
           <p style={styles.subtitle}>최대 지출 카테고리:</p>
           {maxCategory ? (
             <p>
-              {maxCategory.categoryName} -{' '}
+              {maxCategory.categoryName} : {' '}
               {typeof maxCategory.totalSpending === 'number'
               ? `${maxCategory.totalSpending.toLocaleString()}원`
               : '데이터 오류'}
@@ -251,8 +257,8 @@ const CategoryPage: React.FC = () => {
                 <li key={idx} style={styles.listItem}>
                   <span style={styles.category}>{item.categoryName}</span>
                   <span style={styles.amount}>
-                    {typeof item.used === 'number' && typeof item.limit === 'number'
-                    ? `${item.used.toLocaleString()}원 / 한도 ${item.limit.toLocaleString()}원`
+                   {item.totalSpent != null && item.limitAmount != null
+                    ? `${item.totalSpent.toLocaleString()}원 / 한도 ${item.limitAmount.toLocaleString()}원`
                     : '데이터 오류'}
                   </span>
                 </li>
