@@ -6,17 +6,42 @@ import { useNavigate } from 'react-router-dom';
 import { fetchStudentInfo, fixStudentInfo } from '../api/mypage';
 import pigGif from '../assets/piggy.gif';
 
-const MyPage = () => {
+const spinnerStyles: React.CSSProperties = {
+  width: '40px',
+  height: '40px',
+  border: '4px solid #f3f3f3',
+  borderTop: '4px solid #3498db',
+  borderRadius: '50%',
+  animation: 'spin 1s linear infinite',
+};
+
+const styleTag = `
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`;
+
+const Spinner: React.FC = () => (
+  <>
+    <style>{styleTag}</style>
+    <div style={spinnerStyles} />
+  </>
+);
+
+const MyPage: React.FC = () => {
   const { sId, logout } = useAuth();
   const [student, setStudent] = useState<{ name: string; sid: string; snum: number } | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newSId, setNewSId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!sId) return;
+    setIsLoading(true);
     fetchStudentInfo(sId)
       .then(data => {
         setStudent(data);
@@ -25,6 +50,9 @@ const MyPage = () => {
       })
       .catch(() => {
         alert('사용자 정보를 불러오는 데 실패했습니다.');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [sId]);
 
@@ -37,73 +65,125 @@ const MyPage = () => {
   const handleEdit = async () => {
     if (!student) return;
 
-    try {
-      const payload: { name?: string; password?: string; sId?: string } = {};
-      if (newName !== student.name) payload.name = newName;
-      if (newPassword.trim()) payload.password = newPassword;
-      if (newSId !== student.sid) payload.sId = newSId;
+    const payload: { name?: string; password?: string; sId?: string } = {};
+    if (newName !== student.name) payload.name = newName;
+    if (newPassword.trim()) payload.password = newPassword;
+    if (newSId !== student.sid) payload.sId = newSId;
 
-      const res = await fixStudentInfo(student.sid, payload);
-      // alert(res.message || '정보가 수정되었습니다.');
+    if (Object.keys(payload).length === 0) {
       setEditMode(false);
+      return;
+    }
 
-      // 로그아웃 처리 if 아이디 바뀌었으면
+    try {
+      setIsLoading(true);
+      const res = await fixStudentInfo(student.sid, payload);
+      setEditMode(false);
+      // 아이디 변경 시 다시 로그인
       if (payload.sId && payload.sId !== sId) {
         alert('아이디가 변경되어 다시 로그인해야 합니다.');
         logout();
         navigate('/');
       } else {
-        fetchStudentInfo(payload.sId || sId).then(setStudent);
+        // 변경된 정보 다시 불러오기
+        const updated = await fetchStudentInfo(payload.sId || sId);
+        setStudent(updated);
       }
-
       setNewPassword('');
-    } catch (error) {
+    } catch {
       alert('수정에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // 로딩 중에는 스피너 표시
+  if (isLoading) {
+    return (
+      <CenterLayout>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0px' }}>
+          <Spinner />
+        </div>
+      </CenterLayout>
+    );
+  }
+
   if (!student) {
-    return <CenterLayout>로딩 중...</CenterLayout>;
+    // 만약 로딩은 끝났지만 student가 없으면 에러 처리
+    return (
+      <CenterLayout>
+        <p>사용자 정보를 불러올 수 없습니다.</p>
+      </CenterLayout>
+    );
   }
 
   return (
     <CenterLayout>
       <div style={styles.backBtnWrapper}>
-        <button onClick={() => navigate(-1)} style={styles.backBtn} aria-label="뒤로가기">⬅️</button>
+        <button onClick={() => navigate(-1)} style={styles.backBtn} aria-label="뒤로가기">
+          ⬅️
+        </button>
       </div>
 
       <div style={styles.container}>
         <h2 style={styles.title}>내 정보</h2>
         <img src={pigGif} alt="귀여운 돼지" style={styles.gif} />
 
-        <div style={styles.infoBox}><strong>학번:</strong> {student.snum}</div>
+        <div style={styles.infoBox}>
+          <strong>학번:</strong> {student.snum}
+        </div>
 
         {editMode ? (
           <>
             <div style={styles.inputBox}>
               <label>아이디</label>
-              <input value={newSId} onChange={e => setNewSId(e.target.value)} style={styles.input} />
+              <input
+                value={newSId}
+                onChange={e => setNewSId(e.target.value)}
+                style={styles.input}
+              />
             </div>
             <div style={styles.inputBox}>
               <label>이름</label>
-              <input value={newName} onChange={e => setNewName(e.target.value)} style={styles.input} />
+              <input
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                style={styles.input}
+              />
             </div>
             <div style={styles.inputBox}>
               <label>새 비밀번호</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={styles.input} />
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                style={styles.input}
+              />
             </div>
-            <button style={styles.saveButton} onClick={handleEdit}>저장하기</button>
-            <button style={styles.cancelButton} onClick={() => setEditMode(false)}>취소</button>
+            <button style={styles.saveButton} onClick={handleEdit}>
+              저장하기
+            </button>
+            <button style={styles.cancelButton} onClick={() => setEditMode(false)}>
+              취소
+            </button>
           </>
         ) : (
           <>
-            <div style={styles.infoBox}><strong>아이디:</strong> {student.sid}</div>
-            <div style={styles.infoBox}><strong>이름:</strong> {student.name}</div>
-            <button style={styles.editButton} onClick={() => setEditMode(true)}>정보 수정</button>
+            <div style={styles.infoBox}>
+              <strong>아이디:</strong> {student.sid}
+            </div>
+            <div style={styles.infoBox}>
+              <strong>이름:</strong> {student.name}
+            </div>
+            <button style={styles.editButton} onClick={() => setEditMode(true)}>
+              정보 수정
+            </button>
           </>
         )}
 
-        <button style={styles.logoutButton} onClick={handleLogout}>로그아웃</button>
+        <button style={styles.logoutButton} onClick={handleLogout}>
+          로그아웃
+        </button>
       </div>
     </CenterLayout>
   );
@@ -151,7 +231,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '80%',
     marginBottom: '12px',
     textAlign: 'left',
-    marginRight: '7%', // 왼쪽으로 이동
+    marginRight: '7%',
   },
   input: {
     width: '100%',

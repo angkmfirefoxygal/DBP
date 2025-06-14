@@ -22,10 +22,38 @@ import type {
 } from '../api/analysis';
 import { CATEGORY_OPTIONS } from '../constants/categories';
 
+const spinnerStyles: React.CSSProperties = {
+  width: '40px',
+  height: '40px',
+  border: '4px solid #f3f3f3',
+  borderTop: '4px solid #3498db',
+  borderRadius: '50%',
+  animation: 'spin 1s linear infinite',
+};
+
+const styleTag = `
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`;
+
+const Spinner: React.FC = () => (
+  <>
+    <style>{styleTag}</style>
+    <div style={spinnerStyles} />
+  </>
+);
+
 const CategoryPage: React.FC = () => {
   const [spendings, setSpendings] = useState<Spending[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { sNum } = useAuth();
+
+  // 로딩 상태
+  const [isLoadingSpendings, setIsLoadingSpendings] = useState(false);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+
   const [isAdding, setIsAdding] = useState(false);
   const [newCategory, setNewCategory] = useState(CATEGORY_OPTIONS[0]);
   const [newAmount, setNewAmount] = useState('');
@@ -43,18 +71,27 @@ const CategoryPage: React.FC = () => {
 
   const loadSpendings = async () => {
     if (!sNum) throw new Error('학생 번호 없음');
-    const data = await fetchSpendings(sNum);
-    setSpendings(data);
+    setIsLoadingSpendings(true);
+    try {
+      const data = await fetchSpendings(sNum);
+      setSpendings(data);
+    } catch (err) {
+      console.error('❌ 소비 내역 불러오기 실패:', err);
+      setError('소비 내역을 불러오는 중 문제가 발생했습니다.');
+    } finally {
+      setIsLoadingSpendings(false);
+    }
   };
 
   useEffect(() => {
     if (!sNum) return;
+    // 최초 최대 카테고리 로드
     const loadMaxCategory = async () => {
       try {
         const res = await fetchMaxCategory(sNum);
         setMaxCategory(res);
       } catch (err) {
-        console.error("\u274C [프론트] 최대 지출 카테고리 오류:", err);
+        console.error('❌ [프론트] 최대 지출 카테고리 오류:', err);
       }
     };
     loadSpendings();
@@ -63,14 +100,30 @@ const CategoryPage: React.FC = () => {
 
   useEffect(() => {
     if (isAnalysisMode && sNum) {
-      fetchMaxCategory(sNum).then(setMaxCategory);
-      fetchExceedCategories(sNum).then(setExceedCategories).catch(console.error);
-      fetchCategoryMonthlySpending(sNum).then(setMonthlySpending).catch(console.error);
+      setIsLoadingAnalysis(true);
+      Promise.all([
+        fetchMaxCategory(sNum),
+        fetchExceedCategories(sNum),
+        fetchCategoryMonthlySpending(sNum),
+      ])
+        .then(([maxRes, exceedRes, monthlyRes]) => {
+          setMaxCategory(maxRes);
+          setExceedCategories(exceedRes);
+          setMonthlySpending(monthlyRes);
+        })
+        .catch(err => {
+          console.error('❌ 분석 데이터 불러오기 실패:', err);
+        })
+        .finally(() => {
+          setIsLoadingAnalysis(false);
+        });
     }
   }, [isAnalysisMode, sNum]);
 
   const uniqueCategories = ['전체', ...Array.from(new Set(spendings.map(item => item.categoryName)))];
-  const filteredSpendings = selectedCategory === '전체' ? spendings : spendings.filter(item => item.categoryName === selectedCategory);
+  const filteredSpendings = selectedCategory === '전체'
+    ? spendings
+    : spendings.filter(item => item.categoryName === selectedCategory);
 
   const handleEditClick = (item: Spending) => {
     setEditingId(item.id);
@@ -103,8 +156,6 @@ const CategoryPage: React.FC = () => {
     }
   };
 
-
-
   const handleEditCancel = () => {
     setEditingId(null);
     setEditAmount('');
@@ -134,25 +185,46 @@ const CategoryPage: React.FC = () => {
       <div style={{ textAlign: 'left' }}>
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'transparent', border: 'none', fontSize: '30px', cursor: 'pointer', marginLeft: '-10px' }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '30px',
+            cursor: 'pointer',
+            marginLeft: '-10px'
+          }}
           aria-label="뒤로가기"
-        >⬅️</button>
+        >
+          ⬅️
+        </button>
       </div>
 
       <div style={styles.container}>
         <h2 style={styles.title}>소비 내역 조회 및 분석</h2>
         {error && <p style={styles.error}>{error}</p>}
 
-        <button style={styles.btnAnlsys} onClick={() => setIsAnalysisMode(!isAnalysisMode)}>
+        <button
+          style={styles.btnAnlsys}
+          onClick={() => setIsAnalysisMode(prev => !prev)}
+        >
           {isAnalysisMode ? '← 소비 내역으로' : '소비 내역 분석'}
         </button>
 
-        {isAnalysisMode ? (
+        {/* 로딩 중 도넛 스피너 */}
+        {((!isAnalysisMode && isLoadingSpendings) || (isAnalysisMode && isLoadingAnalysis)) ? (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+            <Spinner />
+          </div>
+        ) : isAnalysisMode ? (
+          // 분석 모드
           <>
             <p style={styles.subtitle}>최대 지출 카테고리</p>
             {maxCategory ? (
-              <p>{maxCategory.categoryName} : {maxCategory.totalSpending.toLocaleString()}원</p>
-            ) : <p>데이터가 없습니다.</p>}
+              <p>
+                {maxCategory.categoryName} : {maxCategory.totalSpending.toLocaleString()}원
+              </p>
+            ) : (
+              <p>데이터가 없습니다.</p>
+            )}
 
             <p style={{ ...styles.subtitle, marginTop: '12px' }}>카테고리별 월 지출 내역</p>
             {monthlySpending.length > 0 ? (
@@ -161,11 +233,15 @@ const CategoryPage: React.FC = () => {
                   <li key={idx} style={styles.listItem}>
                     <span style={styles.category}>{item.categoryName}</span>
                     <span style={styles.date}>{item.spendMonth}</span>
-                    <span style={styles.amount}>{item.spending.toLocaleString()}원</span>
+                    <span style={styles.amount}>
+                      {item.spending.toLocaleString()}원
+                    </span>
                   </li>
                 ))}
               </ul>
-            ) : <p>월별 지출 내역이 없습니다.</p>}
+            ) : (
+              <p>월별 지출 내역이 없습니다.</p>
+            )}
 
             <p style={{ ...styles.subtitle, marginTop: '12px' }}>예산 초과 카테고리</p>
             {exceedCategories.length > 0 ? (
@@ -173,103 +249,103 @@ const CategoryPage: React.FC = () => {
                 {exceedCategories.map((item, idx) => (
                   <li key={idx} style={styles.listItem}>
                     <span style={styles.category}>{item.categoryName}</span>
-                    <span style={styles.amount}>{item.totalSpent.toLocaleString()}원 / 한도 {item.limitAmount.toLocaleString()}원</span>
+                    <span style={styles.amount}>
+                      {item.totalSpent.toLocaleString()}원 / 한도 {item.limitAmount.toLocaleString()}원
+                    </span>
                   </li>
                 ))}
               </ul>
-            ) : <p>예산을 초과한 카테고리가 없습니다.</p>}
-          </>
-        ) : filteredSpendings.length === 0 ? (
-          <>
-            <p style={styles.subtitle}>해당 카테고리의 소비 내역이 없습니다.</p>
-            <button style={styles.btnAdd} onClick={() => setIsAdding(true)}>+</button>
+            ) : (
+              <p>예산을 초과한 카테고리가 없습니다.</p>
+            )}
           </>
         ) : (
-          <>
-            <ul style={{ maxHeight: '300px', overflowY: 'auto', ...styles.list }}>
-              {filteredSpendings.map((item) => (
-                <li key={item.id} style={styles.listItem}>
-                  <span style={styles.category}>{item.categoryName}</span>
-                  {editingId === item.id ? (
-                    <div style={{
-                      backgroundColor: '#fff',
-                      padding: '6px',
-                      border: '0.5px',
-                      borderRadius: '12px',
-                      width: '80%',
-                      marginTop: '8px',
-                      marginBottom: '2px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
-                        <label style={{ width: '60px' }}>금액</label>
-                        <input
-                          type="number"
-                          value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
-                          style={{
-                            flex: 1,
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1px solid #ccc',
-                            fontSize: '14px',
-                          }}
-                        />
+          // 일반 소비 내역 모드
+          filteredSpendings.length === 0 ? (
+            <>
+              <p style={styles.subtitle}>해당 카테고리의 소비 내역이 없습니다.</p>
+              <button style={styles.btnAdd} onClick={() => setIsAdding(true)}>+</button>
+            </>
+          ) : (
+            <>
+              <ul style={{ maxHeight: '300px', overflowY: 'auto', ...styles.list }}>
+                {filteredSpendings.map(item => (
+                  <li key={item.id} style={styles.listItem}>
+                    <span style={styles.category}>{item.categoryName}</span>
+                    {editingId === item.id ? (
+                      <div style={{
+                        backgroundColor: '#fff',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        width: '80%',
+                        marginTop: '8px',
+                        marginBottom: '2px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
+                          <label style={{ width: '60px' }}>금액</label>
+                          <input
+                            type="number"
+                            value={editAmount}
+                            onChange={e => setEditAmount(e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid #ccc',
+                              fontSize: '14px',
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
+                          <label style={{ width: '60px' }}>날짜</label>
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={e => setEditDate(e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid #ccc',
+                              fontSize: '14px',
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                          <button
+                            style={{
+                              ...styles.btnEdit,
+                              backgroundColor: '#64b5f6',
+                            }}
+                            onClick={() => handleEditSave(item.id)}
+                          >
+                            저장
+                          </button>
+                          <button
+                            style={{
+                              ...styles.btnDelete,
+                              backgroundColor: '#ef9a9a',
+                            }}
+                            onClick={handleEditCancel}
+                          >
+                            취소
+                          </button>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
-                        <label style={{ width: '60px' }}>날짜</label>
-                        <input
-                          type="date"
-                          value={editDate}
-                          onChange={(e) => setEditDate(e.target.value)}
-                          style={{
-                            flex: 1,
-                            padding: '6px 10px',
-                            borderRadius: '8px',
-                            border: '1px solid #ccc',
-                            fontSize: '14px',
-                          }}
-                        />
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                        <button
-                          style={{
-                            ...styles.btnEdit,
-                            backgroundColor: '#64b5f6',
-                            // fontWeight: 'bold',
-                            // padding: '6px 16px',
-                          }}
-                          onClick={() => handleEditSave(item.id)}
-                        >
-                          저장
-                        </button>
-                        <button
-                          style={{
-                            ...styles.btnDelete,
-                            backgroundColor: '#ef9a9a',
-                            // fontWeight: 'bold',
-                            // padding: '6px 16px',
-                          }}
-                          onClick={handleEditCancel}
-                        >
-                          취소
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-
-                    <>
-                      <span style={styles.amount}>{item.amount.toLocaleString()}원</span>
-                      <span style={styles.date}>{item.spendDate}</span>
-                      <button style={styles.btnEdit} onClick={() => handleEditClick(item)}>수정</button>
-                      <button style={styles.btnDelete} onClick={() => handleDelete(item.id)}>삭제</button>
-                    </>
-                  )}
-
-                </li>
-              ))}
-            </ul>
-            <button style={styles.btnAdd} onClick={() => setIsAdding(true)}>+</button>
-          </>
+                    ) : (
+                      <>
+                        <span style={styles.amount}>{item.amount.toLocaleString()}원</span>
+                        <span style={styles.date}>{item.spendDate}</span>
+                        <button style={styles.btnEdit} onClick={() => handleEditClick(item)}>수정</button>
+                        <button style={styles.btnDelete} onClick={() => handleDelete(item.id)}>삭제</button>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <button style={styles.btnAdd} onClick={() => setIsAdding(true)}>+</button>
+            </>
+          )
         )}
 
         {isAdding && (
@@ -282,11 +358,12 @@ const CategoryPage: React.FC = () => {
               backgroundColor: '#fafafa',
             }}
           >
+            {/* 신규 입력 폼 */}
             <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label style={{ width: '80px' }}>카테고리</label>
               <select
                 value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
+                onChange={e => setNewCategory(e.target.value)}
                 style={{
                   flex: 1,
                   padding: '8px',
@@ -306,7 +383,7 @@ const CategoryPage: React.FC = () => {
               <input
                 type="number"
                 value={newAmount}
-                onChange={(e) => setNewAmount(e.target.value)}
+                onChange={e => setNewAmount(e.target.value)}
                 placeholder="0"
                 style={{
                   flex: 1,
@@ -323,7 +400,7 @@ const CategoryPage: React.FC = () => {
               <input
                 type="date"
                 value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
+                onChange={e => setNewDate(e.target.value)}
                 style={{
                   flex: 1,
                   padding: '8px',
@@ -361,7 +438,6 @@ const CategoryPage: React.FC = () => {
               </button>
             </div>
           </div>
-
         )}
       </div>
     </CenterLayout>
