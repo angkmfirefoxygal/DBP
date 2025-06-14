@@ -37,6 +37,7 @@ const CategoryPage: React.FC = () => {
   const [monthlySpending, setMonthlySpending] = useState<CategoryMonthlySpending[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
+  const [editDate, setEditDate] = useState<string>('');
 
   const navigate = useNavigate();
 
@@ -74,10 +75,11 @@ const CategoryPage: React.FC = () => {
   const handleEditClick = (item: Spending) => {
     setEditingId(item.id);
     setEditAmount(item.amount.toString());
+    setEditDate(item.spendDate);
   };
 
   const handleEditSave = async (id: number) => {
-    if (editAmount.trim() === '' || isNaN(Number(editAmount))) return;
+    if (editAmount.trim() === '' || isNaN(Number(editAmount)) || !editDate) return;
 
     const spending = spendings.find(s => s.id === id);
     if (!spending) {
@@ -88,17 +90,19 @@ const CategoryPage: React.FC = () => {
     try {
       await updateSpending(id, {
         amount: Number(editAmount),
-        spendDate: spending.spendDate,
+        spendDate: editDate,
         categoryName: spending.categoryName,
       });
       await loadSpendings();
       setEditingId(null);
       setEditAmount('');
+      setEditDate('');
     } catch (err) {
       console.error('❌ 수정 실패:', err);
       setError('수정 중 문제가 발생했습니다.');
     }
   };
+
 
 
   const handleEditCancel = () => {
@@ -187,45 +191,72 @@ const CategoryPage: React.FC = () => {
                 <li key={item.id} style={styles.listItem}>
                   <span style={styles.category}>{item.categoryName}</span>
                   {editingId === item.id ? (
-                    <>
-                      <input
-                        type="number"
-                        value={editAmount}
-                        onChange={(e) => setEditAmount(e.target.value)}
-                        placeholder="금액 입력"
-                        style={{
-                          padding: '6px 8px',
-                          borderRadius: '8px',
-                          border: '1px solid #ccc',
-                          fontSize: '13px',
-                          width: '90px',
-                          marginRight: '6px',
-                        }}
-                      />
-                      <button
-                        style={{
-                          ...styles.btnEdit,
-                          backgroundColor: '#64b5f6',
-                          fontWeight: 'bold',
-                          padding: '4px 10px',
-                        }}
-                        onClick={() => handleEditSave(item.id)}
-                      >
-                        저장
-                      </button>
-                      <button
-                        style={{
-                          ...styles.btnDelete,
-                          backgroundColor: '#ef9a9a',
-                          fontWeight: 'bold',
-                          padding: '4px 10px',
-                        }}
-                        onClick={handleEditCancel}
-                      >
-                        취소
-                      </button>
-                    </>
+                    <div style={{
+                      backgroundColor: '#fff',
+                      padding: '6px',
+                      border: '0.5px',
+                      borderRadius: '12px',
+                      width: '80%',
+                      marginTop: '8px',
+                      marginBottom: '2px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
+                        <label style={{ width: '60px' }}>금액</label>
+                        <input
+                          type="number"
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          style={{
+                            flex: 1,
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #ccc',
+                            fontSize: '14px',
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
+                        <label style={{ width: '60px' }}>날짜</label>
+                        <input
+                          type="date"
+                          value={editDate}
+                          onChange={(e) => setEditDate(e.target.value)}
+                          style={{
+                            flex: 1,
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #ccc',
+                            fontSize: '14px',
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                        <button
+                          style={{
+                            ...styles.btnEdit,
+                            backgroundColor: '#64b5f6',
+                            // fontWeight: 'bold',
+                            // padding: '6px 16px',
+                          }}
+                          onClick={() => handleEditSave(item.id)}
+                        >
+                          저장
+                        </button>
+                        <button
+                          style={{
+                            ...styles.btnDelete,
+                            backgroundColor: '#ef9a9a',
+                            // fontWeight: 'bold',
+                            // padding: '6px 16px',
+                          }}
+                          onClick={handleEditCancel}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
                   ) : (
+
                     <>
                       <span style={styles.amount}>{item.amount.toLocaleString()}원</span>
                       <span style={styles.date}>{item.spendDate}</span>
