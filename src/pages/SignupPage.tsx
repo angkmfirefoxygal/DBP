@@ -54,7 +54,7 @@ const SignupPage = () => {
     console.log("실제 넘기는 값:", Number(studentNum.trim())); // NaN이면 문제 확정
 
     if (success) {
-      alert('회원가입 성공!');
+      // alert('회원가입 성공!');
       navigate('/');
     } else {
     }
