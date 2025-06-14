@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 const MainPage = () => {
   const navigate = useNavigate();
   const { isLoggedIn, logout } = useAuth();
-  
+
   return (
     <div style={styles.page}>
       <CenterLayout>
@@ -30,7 +30,7 @@ const MainPage = () => {
               <img src={pigGif} alt="귀여운 돼지" style={styles.gif} />
               <div style={styles.buttonGroup}>
                 <button onClick={() => navigate('/category')} style={styles.button}>
-                  소비 내역 조회 
+                  소비 내역 조회
                 </button>
                 <button onClick={() => navigate('/discount')} style={styles.button}>
                   할인 정보
@@ -68,7 +68,7 @@ const MainPage = () => {
 
 
 
-const styles  = {
+const styles = {
   page: {
     backgroundColor: '#ffffff', // ✅ 배경 흰색
     minHeight: '100vh',
@@ -77,11 +77,11 @@ const styles  = {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'flex-start',
-    padding:'10px',
+    padding: '10px',
     width: '100%',
     marginBottom: '24px',
   },
-    
+
   banner: {
     backgroundColor: '#ff69b4', // 핫핑크
     color: '#fff',
@@ -91,20 +91,20 @@ const styles  = {
     fontWeight: 'bold',
   },
   boxTopRight: {
-  position: 'absolute' as const,
-  top: '-60px',
-  right: '0',
-},
-profileButton: {
-  background: '#f0f0f0',       // 연한 회색
-  border: 'none',
-  fontSize: '14px',
-  color: '#333',
-  cursor: 'pointer',
-  padding: '4px 10px',
-  borderRadius: '15px',        // 꼭짓점 라운드 처리
-  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',  // 약간의 그림자 추가해도 예쁨
-},
+    position: 'absolute' as const,
+    top: '0px',
+    right: '0',
+  },
+  profileButton: {
+    background: '#f0f0f0',       // 연한 회색
+    border: 'none',
+    fontSize: '14px',
+    color: '#333',
+    cursor: 'pointer',
+    padding: '4px 10px',
+    borderRadius: '15px',        // 꼭짓점 라운드 처리
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',  // 약간의 그림자 추가해도 예쁨
+  },
   title: {
     textAlign: 'center' as const,
     marginBottom: '8px',
@@ -123,7 +123,7 @@ profileButton: {
     margin: '0 auto 24px auto',
   },
   buttonGroup: {
-    top:'30px',
+    top: '30px',
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '15px',

@@ -40,7 +40,7 @@ const SignupPage = () => {
       .filter(i => i.categoryName && i.limitAmount)
       .map(i => ({
         categoryName: i.categoryName,
-        limitAmount: Number(i.limitAmount),
+        limitAmount: Number(i.limitAmount) * 10000,
       }));
 
     const success = await signup({
@@ -50,12 +50,13 @@ const SignupPage = () => {
       sNum: Number(studentNum.trim()),
       categoryBudgets,
     });
-    
+
     console.log("실제 넘기는 값:", Number(studentNum.trim())); // NaN이면 문제 확정
 
     if (success) {
       alert('회원가입 성공!');
       navigate('/');
+    } else {
     }
   };
 
@@ -159,13 +160,13 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
   },
   select: {
-  flex: 'none',
-  width: '140px', // ✅ 폭 줄임
-  padding: '8px',
-  fontSize: '15px',
-  borderRadius: '6px',
-  border: '1px solid #ccc', // ✅ 회색 테두리
-  boxSizing: 'border-box',
+    flex: 'none',
+    width: '140px', // ✅ 폭 줄임
+    padding: '8px',
+    fontSize: '15px',
+    borderRadius: '6px',
+    border: '1px solid #ccc', // ✅ 회색 테두리
+    boxSizing: 'border-box',
   },
 
   limitInput: {

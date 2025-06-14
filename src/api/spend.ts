@@ -22,7 +22,10 @@ export const createSpending = async (data: Omit<Spending, 'id'>) => {
 };
 
 // 3. 소비 내역 수정
-export const updateSpending = async (id: number, data: Partial<Spending>) => {
+export const updateSpending = async (
+  id: number,
+  data: { amount: number; spendDate: string; categoryName: string }
+) => {
   const res = await axios.patch(`/spend/fix?id=${id}`, data);
   return res.data;
 };

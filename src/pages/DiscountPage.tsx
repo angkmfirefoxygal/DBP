@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CenterLayout from '../components/CenterLayout';
 import { useAuth } from '../contexts/AuthContext'; // 경로 조정
+import { useNavigate } from 'react-router-dom';
 
 interface Discount {
   categoryName: string;
@@ -13,10 +14,13 @@ const DiscountPage = () => {
   const { sNum } = useAuth(); // ✅ sNum 사용
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [error, setError] = useState<string>('');
+  const navigate = useNavigate();
+
+  console.log(sNum)
 
   useEffect(() => {
     const fetchDiscounts = async () => {
-      if (sNum === undefined) {
+      if (!sNum) {
         setError('로그인이 필요합니다.');
         return;
       }
@@ -41,6 +45,13 @@ const DiscountPage = () => {
 
   return (
     <CenterLayout>
+      <div style={{ textAlign: 'left' }}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'transparent', border: 'none', fontSize: '30px', cursor: 'pointer', marginLeft: '-10px' }}
+          aria-label="뒤로가기"
+        >⬅️</button>
+      </div>
       <div style={styles.container}>
         <h2 style={styles.title}>할인 정보</h2>
         <p style={styles.subtitle}> 회원님의 소비내역 분석에 따른 맞춤 할인 정보입니다.  </p>

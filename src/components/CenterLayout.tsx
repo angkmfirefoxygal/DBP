@@ -13,7 +13,7 @@ const CenterLayout = ({ children }: { children: React.ReactNode }) => {
 
 const styles = {
   container: {
-    height: '100dvh', // ✅ 디바이스 뷰포트 전체 높이 확보 (모바일 대응 포함)
+    minHeight: '100dvh', // ⬅️ 최소 높이만 설정 (모바일 뷰포트 대응 포함)
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -24,10 +24,9 @@ const styles = {
   box: {
     width: '100%',
     maxWidth: '400px',
-    height: '100%',         // ✅ 내부 box도 전체 높이 차지
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center', // ✅ 내부 콘텐츠도 수직 중앙 정렬
+    justifyContent: 'center',
     background: '#fff',
     padding: '32px',
     borderRadius: '12px',
