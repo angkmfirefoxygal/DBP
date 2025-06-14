@@ -25,7 +25,7 @@ export const signup = async (body: RegisterRequest) => {
     }
   } catch (error) {
     console.error('회원가입 에러:', error);
-    alert('서버 오류로 회원가입에 실패했습니다.');
+    alert('서버 오류로 회원가입에 실패했습니다 (학번 중복)');
     return false;
   }
 };
