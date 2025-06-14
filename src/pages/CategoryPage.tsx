@@ -117,11 +117,29 @@ const CategoryPage: React.FC = () => {
       if (!sNum) throw new Error('학생 번호 없음');
       const data = await fetchSpendings(sNum);
       setSpendings(data);
-    };
+  };
+
+  
 
   useEffect(() => {
-    loadSpendings();
-  }, [sNum]);
+  if (!sNum) return;
+
+  const loadMaxCategory = async () => {
+    try {
+      const res = await fetchMaxCategory(sNum);
+      console.log("✅ [프론트] 최대 지출 응답 결과:", res);
+      setMaxCategory(res);
+    } catch (err) {
+      console.error("❌ [프론트] 최대 지출 카테고리 오류:", err);
+    }
+  };
+
+  loadSpendings();       // ✅ 소비 내역 로딩도 함께 실행!
+  loadMaxCategory();     // 🔄 기존 분석 정보 로딩
+
+}, [sNum]);
+
+
 
 
   // 필터 핸들러
@@ -197,14 +215,9 @@ const CategoryPage: React.FC = () => {
     </div>
 
     <div style={styles.container}>
-      <h2 style={styles.title}>소비 내역 조회</h2>
+      <h2 style={styles.title}>소비 내역 조회 및 분석</h2>
 
       {error && <p style={styles.error}>{error}</p>}
-
-      
-      
-
-      
 
       <button
         style={styles.btnAnlsys}
@@ -220,7 +233,10 @@ const CategoryPage: React.FC = () => {
           {maxCategory ? (
             <p>
               {maxCategory.categoryName} -{' '}
-              {maxCategory.totalAmount.toLocaleString()}원
+              {typeof maxCategory.totalSpending === 'number'
+              ? `${maxCategory.totalSpending.toLocaleString()}원`
+              : '데이터 오류'}
+
             </p>
           ) : (
             <p>데이터가 없습니다.</p>
@@ -235,8 +251,9 @@ const CategoryPage: React.FC = () => {
                 <li key={idx} style={styles.listItem}>
                   <span style={styles.category}>{item.categoryName}</span>
                   <span style={styles.amount}>
-                    {item.used.toLocaleString()}원 사용 / 한도{' '}
-                    {item.limit.toLocaleString()}원
+                    {typeof item.used === 'number' && typeof item.limit === 'number'
+                    ? `${item.used.toLocaleString()}원 / 한도 ${item.limit.toLocaleString()}원`
+                    : '데이터 오류'}
                   </span>
                 </li>
               ))}
@@ -248,47 +265,48 @@ const CategoryPage: React.FC = () => {
       ) : filteredSpendings.length === 0 ? (
         <p style={styles.subtitle}>해당 카테고리의 소비 내역이 없습니다.</p>
       ) : (
+        
+        
         <ul
           style={{
             maxHeight: '300px',
             
             ...styles.list,
+            
           }}
         > 
-
-          <div style={{ marginBottom: '16px' }}>
-        <label htmlFor="categoryFilter">카테고리 선택: </label>
-        <select
-          id="categoryFilter"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          style={{
-            padding: '5px 25px 5px 10px',
-            marginLeft: '5px',
-            borderRadius: '20px',
-            border: '1px solid #ccc',
-            fontSize: '13px',
-            backgroundColor: '#f9f9f9',
-            backgroundImage:
-              'url("data:image/svg+xml;utf8,<svg fill=\'%23777\' height=\'14\' viewBox=\'0 0 24 24\' width=\'14\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>")',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 10px center',
-            backgroundSize: '14px',
-            cursor: 'pointer',
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            MozAppearance: 'none',
-          }}
-        >
+        <div style={{ marginBottom: '16px' }}>
+          <label htmlFor="categoryFilter">카테고리 선택: </label>
+          <select
+            id="categoryFilter"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{
+              padding: '5px 25px 5px 10px',
+              marginLeft: '5px',
+              borderRadius: '20px',
+              border: '1px solid #ccc',
+              fontSize: '13px',
+              backgroundColor: '#f9f9f9',
+              backgroundImage:
+                'url("data:image/svg+xml;utf8,<svg fill=\'%23777\' height=\'14\' viewBox=\'0 0 24 24\' width=\'14\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>")',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 10px center',
+              backgroundSize: '14px',
+              cursor: 'pointer',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+            }}
+          >
           {uniqueCategories.map((cat, idx) => (
             <option key={idx} value={cat}>
               {cat}
             </option>
           ))}
-        </select>
-      </div>
-          
-          {filteredSpendings.map((item) => (
+          </select>
+        </div>      
+      {filteredSpendings.map((item) => (
             <li key={item.id} style={styles.listItem}>
               <span style={styles.category}>{item.categoryName}</span>
               <span style={styles.amount}>

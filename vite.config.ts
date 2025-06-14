@@ -15,6 +15,13 @@ export default defineConfig({
         target: 'http://localhost:8080', // 스프링 서버 주소
         changeOrigin: true,
       },
+      
+      //지출 분석 프록시
+      '/category': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })
