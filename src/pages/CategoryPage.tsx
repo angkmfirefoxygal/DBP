@@ -66,6 +66,7 @@ const CategoryPage: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
   const [editDate, setEditDate] = useState<string>('');
+  const [editCategory, setEditCategory] = useState<string>('');
 
   const navigate = useNavigate();
 
@@ -129,8 +130,8 @@ const CategoryPage: React.FC = () => {
     setEditingId(item.id);
     setEditAmount(item.amount.toString());
     setEditDate(item.spendDate);
+    setEditCategory(item.categoryName); // 카테고리 설정
   };
-
   const handleEditSave = async (id: number) => {
     if (editAmount.trim() === '' || isNaN(Number(editAmount)) || !editDate) return;
 
@@ -144,7 +145,7 @@ const CategoryPage: React.FC = () => {
       await updateSpending(id, {
         amount: Number(editAmount),
         spendDate: editDate,
-        categoryName: spending.categoryName,
+        categoryName: editCategory, // 수정된 카테고리 반영
       });
       await loadSpendings();
       setEditingId(null);
@@ -271,16 +272,36 @@ const CategoryPage: React.FC = () => {
               <ul style={{ maxHeight: '300px', overflowY: 'auto', ...styles.list }}>
                 {filteredSpendings.map(item => (
                   <li key={item.id} style={styles.listItem}>
-                    <span style={styles.category}>{item.categoryName}</span>
                     {editingId === item.id ? (
                       <div style={{
                         backgroundColor: '#fff',
                         padding: '6px',
                         borderRadius: '12px',
-                        width: '80%',
+                        width: '100%',
                         marginTop: '8px',
                         marginBottom: '2px'
                       }}>
+                        {/* 1) 카테고리 선택 추가 */}
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
+                          <label style={{ width: '60px' }}>카테고리</label>
+                          <select
+                            value={editCategory}
+                            onChange={e => setEditCategory(e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid #ccc',
+                              fontSize: '14px',
+                            }}
+                          >
+                            {CATEGORY_OPTIONS.map((cat, idx) => (
+                              <option key={idx} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* 기존 금액 입력 필드 */}
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', gap: '10px' }}>
                           <label style={{ width: '60px' }}>금액</label>
                           <input
@@ -296,6 +317,8 @@ const CategoryPage: React.FC = () => {
                             }}
                           />
                         </div>
+
+                        {/* 기존 날짜 입력 필드 */}
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '10px' }}>
                           <label style={{ width: '60px' }}>날짜</label>
                           <input
@@ -311,6 +334,8 @@ const CategoryPage: React.FC = () => {
                             }}
                           />
                         </div>
+
+                        {/* 저장/취소 버튼 */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                           <button
                             style={{
@@ -334,6 +359,7 @@ const CategoryPage: React.FC = () => {
                       </div>
                     ) : (
                       <>
+                        <span style={styles.category}>{item.categoryName}</span>
                         <span style={styles.amount}>{item.amount.toLocaleString()}원</span>
                         <span style={styles.date}>{item.spendDate}</span>
                         <button style={styles.btnEdit} onClick={() => handleEditClick(item)}>수정</button>
@@ -362,11 +388,11 @@ const CategoryPage: React.FC = () => {
             <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label style={{ width: '80px' }}>카테고리</label>
               <select
-                value={newCategory}
-                onChange={e => setNewCategory(e.target.value)}
+                value={newCategory}               // ← editCategory → newCategory
+                onChange={e => setNewCategory(e.target.value)}  // ← setEditCategory → setNewCategory
                 style={{
                   flex: 1,
-                  padding: '8px',
+                  padding: '6px 10px',
                   borderRadius: '8px',
                   border: '1px solid #ccc',
                   fontSize: '14px',
@@ -377,7 +403,6 @@ const CategoryPage: React.FC = () => {
                 ))}
               </select>
             </div>
-
             <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label style={{ width: '80px' }}>금액</label>
               <input
